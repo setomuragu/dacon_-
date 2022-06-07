@@ -1,3 +1,4 @@
+#필요한 것을 임포트 해준다
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
@@ -20,6 +21,7 @@ import time
 start = time.time()
 print(start)
 
+#파일 불러오기 (csv)
 submission = pd.read_csv('E:/dacon_data/kist/sample_submission.csv')
 path = 'E:/dacon_data/kist01/kist/train/meta/'
 path01 = 'E:/dacon_data/kist/test/meta/'
@@ -60,13 +62,16 @@ for i in file_list01:
     data = pd.read_csv(path01 + i)
     df01 = pd.concat([df01, data])
 
+#상관관계가 낮은 열들을 지워준다
 df = df.drop(columns = ['CO2관측치', 'EC관측치', '최근분무량', '블루 LED동작강도', '냉방부하', '난방온도', '청색광추정광량', '외부온도관측치'])
 df01 = df01.drop(columns = ['CO2관측치', 'EC관측치', '최근분무량', '블루 LED동작강도', '냉방부하', '난방온도', '청색광추정광량', '외부온도관측치'])
 
+#시간 데이터를 인코딩 한다.
 Label_enc = sklearn.preprocessing.LabelEncoder()
 df['시간'] = Label_enc.fit_transform(df['시간'])
 df01['시간'] = Label_enc.fit_transform(df01['시간'])
 
+#읽어온 데이터들을 리스트로 넣는다.
 for i in range(0, 1592):
     file_name[i] = df.iloc[0 + i * 1440 : 1440 + i * 1440, :]
 for i in range(0, 460):
@@ -81,14 +86,18 @@ for item in os.listdir(main_folder):
     if os.path.isdir(sub_folder):
         list01.append(sub_folder)
 
+
 data_list = []
 data_list01 = []
 data_list02 = []
+
+#target 데이터들 불러오기
 label_list = []
 for i in list01:
     label_leaf = pd.read_csv(i + '/label.csv')
     leaf = pd.concat([leaf, label_leaf])
 
+#읽어온 train 데이터를 데이터별로 1행으로 만들어준다. (하나의 데이터가 1440 * 19)
 for i in range(0, 1592):
     data01 = file_name[i].to_numpy().reshape(1, 15840)
     data_list01.append(data01)
@@ -111,10 +120,12 @@ for i in list01:
     label_leaf = pd.read_csv(i + '/label.csv')
     leaf = pd.concat([leaf, label_leaf])
 
+#필요한 데이터 한 열만 가져오기
 leaf_weight = leaf.iloc[:, 1]
 weight = leaf_weight.to_numpy()
 weight = weight.reshape(-1, 1)
 
+#이미지 데이터 
 data_dir = os.chdir("E:/dacon_data/kist01/kist/train")
 import glob
 from glob import glob
@@ -147,6 +158,7 @@ def make_file(data_height, data_width, channel_n, batch_size):
 
 (label, images) = make_file(data_height, data_width, channel_n, batch_size)
 
+#이미지 데이터를 1행으로 만들어준다
 images01 = images.reshape(-1, 154 * 205 * 3)
 
 from sklearn.preprocessing import LabelEncoder
@@ -157,21 +169,24 @@ label = encoder.transform(items)
 
 scaler = StandardScaler()
 
+#데이터가 train 데이터는 (1592, 1, 15840) 이라서 다시 reshape
 data_list01 = np.array(data_list01).reshape(1592, 15840)
 data_list02 = np.array(data_list02).reshape(460, 15840)
 
+#pandas로 데이터 변환 및 nan 데이터를 0으로 채우기
 images01 = pd.DataFrame(images01)
 train02 = pd.DataFrame(data_list01)
 test02 = pd.DataFrame(data_list02)
 train02 = train02.fillna(0)
 test02 = test02.fillna(0)
 
-
+#csv 데이터에 이미지 데이터를 열로 붙이기
 result03 = pd.concat([train02, images01], axis = 1)
 
 flip04_01 = np.empty(shape = [1, 154 * 205 * 3])
 flip05_01 = np.empty(shape = [1, 154 * 205 * 3])
 
+#불러온 이미지 데이터를 플립
 for i in range(0, 1592):
     flip_flip = cv2.flip(images[i, :, :, :], 1)
     flip04 = flip_flip.reshape(-1, 154 * 205 * 3)
@@ -199,20 +214,23 @@ weight_02 = weight01.copy()
 weight02 = weight01 + weight_01 + weight_02
 final_result05 = final_result05.fillna(0)
 
+#스케일
 from sklearn.preprocessing import MinMaxScaler
 scaler = MinMaxScaler()
 weight02[:] = scaler.fit_transform(weight02[:])
 final_result05[:] = scaler.fit_transform(final_result05[:])
 
+#데이터를 train과 test 데이터로 나눈다 70:30
 x_train,x_test,y_train,y_test= sklearn.model_selection.train_test_split(final_result05,weight02,test_size=0.3, shuffle=True, random_state=0)
 
+#svm으로 예측
 from sklearn import svm
 model = svm.SVR()
 
 model.fit(x_train, y_train)
 print(model.score(x_test, y_test))
 
-
+#예측할 이미지 데이터 불러오기
 data_dir = os.chdir("E:/dacon_data/kist/test/image")
 data_list = glob('*.*')
 data_height = 154
