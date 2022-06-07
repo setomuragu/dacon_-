@@ -1,3 +1,4 @@
+#csv 데이터를 1행씩으로 만들어 예측, 플립하여 데이터 증식
 #필요한 것을 임포트 해준다
 import cv2
 import numpy as np
