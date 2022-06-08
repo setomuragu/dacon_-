@@ -1,3 +1,4 @@
+#임포트
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
@@ -58,6 +59,7 @@ for i in file_list_py01:
     data = pd.read_csv(path + i)
     df01 = pd.concat([df01, data])
 
+#시간 열 데이터를 
 Label_enc = sklearn.preprocessing.LabelEncoder()
 df['시간'] = Label_enc.fit_transform(df['시간'])
 df01['시간'] = Label_enc.fit_transform(df['시간'])
@@ -117,16 +119,6 @@ def make_file(data_height, data_width, channel_n, batch_size):
 
 (label, images) = make_file(data_height, data_width, channel_n, batch_size)
 
-datagen = ImageDataGenerator(
-        featurewise_center=False,  # set input mean to 0 over the dataset
-        samplewise_center=False,  # set each sample mean to 0
-        featurewise_std_normalization=False,  # divide inputs by std of the dataset
-        samplewise_std_normalization=False,  # divide each input by its std
-        rotation_range = 180,  # randomly rotate images in the range (degrees, 0 to 180)
-        zoom_range = 0, # Randomly zoom image 
-        horizontal_flip = True,  # randomly flip images
-        vertical_flip=True)  # randomly flip images
-
 images01 = images.reshape(-1, 150 * 150 * 3)
 
 from sklearn.preprocessing import LabelEncoder
@@ -136,6 +128,8 @@ encoder.fit(items)
 label = encoder.transform(items)
 
 scaler = StandardScaler()
+
+#한 데이터 당 (1440 * 21) 형식이라서 한 행으로 만들기 위해 pca를 이용하여 1차원으로 만듦. 시간 열을 축으로 한 행으로 만들고 전치시켜 1행으로 변환함.
 from sklearn.decomposition import PCA
 result02 = pd.DataFrame()
 for i in range(0, 1592):
@@ -165,6 +159,7 @@ images01 = pd.DataFrame(images01)
 result03 = result02.reset_index(drop = True)
 result03 = pd.concat([result03, images01], axis = 1)
 
+#알씨로 외부에서 회전한 이미지 데이터를 위해 다시 설정. (시계방향으로 90도 회전)
 data_dir = os.chdir("E:/dacon_data/kist01/kist/flip_01")
 data_list = glob('*.*')
 data_height = 150
@@ -263,3 +258,5 @@ print("time :", time.time() - start)
 a = model.predict(test03)
 submission.iloc[:, 1] = a
 submission.to_csv('E:/dacon_data/kist/sample_submission_04.csv',index=False)
+
+#데이콘 제출 결과는 0.25
